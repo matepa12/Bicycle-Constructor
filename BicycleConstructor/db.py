@@ -19,11 +19,16 @@ class DBCreation:
                       "name TEXT NOT NULL",
                       "part_group TEXT NOT NULL",
                       "company TEXT",
-                      "value INTEGER NOT NULL")
+                      "value INTEGER NOT NULL"),
+            "custom_subsystems": ("_id TEXT PRIMARY KEY",
+                                  "name TEXT NOT NULL",
+                                  "subsystem_group TEXT NOT NULL",
+                                  "chosen_parts TEXT NOT NULL")
         }
         for key in base_tables:
             self.db.execute(f"CREATE TABLE IF NOT EXISTS {key} "
                             f"({','.join(value for value in base_tables[key])})")
+        self.db.commit()
 
     def populate_tables(self):
         subsystems = {"bicycle_base": ("frame",

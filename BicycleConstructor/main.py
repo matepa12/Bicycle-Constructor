@@ -1,14 +1,19 @@
-import enigne
+import engine
 import db
 import os
 
 if __name__ == '__main__':
 
-    init_db = db.DBCreation("bicycle_database.sqlite")
-    if os.path.exists("bicycle_database.sqlite") is False:
+    db_path = "bicycle_database.sqlite"
+
+    if os.path.exists(db_path) is False:
+        init_db = db.DBCreation(db_path)
         init_db.create_tables()
         init_db.populate_tables()
+    else:
+        init_db = db.DBCreation(db_path)
 
-    main_window = enigne.BCGUIEngine()
+    main_window = engine.Engine()
+    main_window.mainloop()
 
     init_db.close()
