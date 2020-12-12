@@ -13,7 +13,7 @@ if __name__ == '__main__':
     else:
         init_db = db.DBCreation(db_path)
 
-    main_window = engine.Engine()
+    main_window = engine.Engine(init_db)
     main_window.mainloop()
 
     init_db.close()
