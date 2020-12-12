@@ -17,8 +17,8 @@ class DBCreation:
                             "subsystem_group TEXT NOT NULL"),
             "parts": ("_id INTEGER PRIMARY KEY AUTOINCREMENT",
                       "name TEXT NOT NULL",
-                      "value FLOAT NOT NULL",
                       "company TEXT",
+                      "value FLOAT NOT NULL",
                       "part_group TEXT NOT NULL"),
             "custom_subsystems": ("_id INTEGER PRIMARY KEY AUTOINCREMENT",
                                   "name TEXT NOT NULL",
@@ -98,7 +98,7 @@ class DBCreation:
         self.db.commit()
 
     def part_input(self, values: tuple):
-        self.db.execute("INSERT INTO parts (name, value, company, part_group) VALUES (?, ?, ?, ?)", values)
+        self.db.execute("INSERT INTO parts (name, company, value, part_group) VALUES (?, ?, ?, ?)", values)
         self.db.commit()
 
     def get_table_names_list(self, table_name: str):
