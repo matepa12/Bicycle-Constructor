@@ -70,13 +70,13 @@ class DBCreation:
                                  "Other",
                                  )
                       }
-        for index, key in enumerate(subsystems):
+        for key in subsystems:
 
             self.db.execute("INSERT INTO subsystem_groups (name) VALUES (?)", (key,))
 
             for value in subsystems[key]:
                 self.db.execute("INSERT INTO part_groups (name, subsystem_group) VALUES (?, ?)",
-                                (value, index + 1))
+                                (value, key))
         self.db.commit()
 
     def get_subsystem_list(self, subsystem_group):
@@ -101,20 +101,19 @@ class DBCreation:
         self.db.execute("INSERT INTO parts (name, company, value, part_group) VALUES (?, ?, ?, ?)", values)
         self.db.commit()
 
-    def get_table_names_list(self, table_name: str):
+    def get_table_names_list(self,
+                             table_name: str,
+                             column_filter: str = None,
+                             column_filter_value: str = None):
         table_name_list = []
-        for row in self.db.execute(f"SELECT name FROM {table_name}").fetchall():
-            table_name_list.append(row[0])
+        if column_filter is None or column_filter_value is None:
+            for row in self.db.execute(f"SELECT name FROM {table_name}").fetchall():
+                table_name_list.append(row[0])
+        else:
+            for row in self.db.execute(f"SELECT name FROM {table_name} "
+                                       f"WHERE {column_filter} = {column_filter_value}").fetchall():
+                table_name_list.append(row[0])
         return table_name_list
 
     def close(self):
         self.db.close()
-
-
-class Parts:
-
-    def __init__(self, part_name: str, part_group: str, company: str = None, value: float = 0):
-        self.part_name = part_name
-        self.part_group = part_group
-        self.company = company
-        self.value = value

@@ -9,21 +9,23 @@ class Engine:
     def __init__(self, database):
 
         self.database = database
+        self.event = None
+        self.values = None
 
         # Column 1 ==========
 
         self.bicycle_base_list = Psgui.Listbox(
             self.database.get_subsystem_list("Bicycle base"),
-            size=(20, 6), pad=(2, (0, 0)))
+            size=(20, 6), pad=(2, (0, 0)), enable_events=True, key='-bicycle_base-')
         self.drive_system_list = Psgui.Listbox(
             self.database.get_subsystem_list("Drive system"),
-            size=(20, 6), pad=(2, (0, 0)))
+            size=(20, 6), pad=(2, (0, 0)), enable_events=True, key='-drive_system-')
         self.brake_system_list = Psgui.Listbox(
             self.database.get_subsystem_list("Brake system"),
-            size=(20, 6), pad=(2, (0, 0)))
+            size=(20, 6), pad=(2, (0, 0)), enable_events=True, key='-brake_system-')
         self.wheels_list = Psgui.Listbox(
             self.database.get_subsystem_list("Wheels"),
-            size=(20, 6), pad=(2, (0, 0)))
+            size=(20, 6), pad=(2, (0, 0)), enable_events=True, key='-wheels-')
         add_subsystem_button = Psgui.Button("Add subsystem", pad=(2, 10))
 
         column1_layout = [
@@ -68,18 +70,26 @@ class Engine:
         column2 = Psgui.Column(layout=column2_layout, pad=(10, 10))
 
         # Column 3 ==========
-        selected_subsystem = Psgui.Text("test subsystem", font=('Calibri', 10), size=(16, 1))
-        subsystem_name = Psgui.Frame('Selected subsystem', [[selected_subsystem]])
-        subsystem_list = Psgui.Listbox(test_values, size=(20, 6), pad=(2, (0, 0)))
-        subsystem_parts_list = Psgui.Listbox(test_values, size=(20, 18), pad=(2, (0, 0)))
+        self.selected_subsystem = Psgui.Text([], font=('Calibri', 10), size=(16, 1))
+        subsystem_name = Psgui.Frame('Selected subsystem', [[self.selected_subsystem]])
+        self.subsystem_list = Psgui.Listbox([],
+                                            size=(20, 6),
+                                            pad=(2, (0, 0)),
+                                            enable_events=True,
+                                            key='-subsystem_choose-')
+        self.subsystem_parts_list = Psgui.Listbox([],
+                                                  enable_events=True,
+                                                  key="-part_choose-",
+                                                  size=(20, 18),
+                                                  pad=(2, (0, 0)))
         add_parts_button = Psgui.Button("Add a part", pad=(2, 10), enable_events=True)
 
         column3_layout = [
             [subsystem_name],
             [Psgui.Text("Subsystem:", pad=(2, (10, 0)))],
-            [subsystem_list],
+            [self.subsystem_list],
             [Psgui.Text("Parts:", pad=(2, (10, 0)))],
-            [subsystem_parts_list],
+            [self.subsystem_parts_list],
             [add_parts_button],
         ]
         column3 = Psgui.Column(layout=column3_layout, pad=(10, 10))
@@ -112,7 +122,8 @@ class Engine:
                             # [Psgui.OptionMenu(test_values, key='-company_name-')],
                             [Psgui.In(key='-company_name_new-')],
                             [Psgui.In(key='-part_value-')],
-                            [Psgui.OptionMenu(self.database.get_table_names_list('part_groups'), key='-part_group-')]])],
+                            [Psgui.OptionMenu(self.database.get_table_names_list('part_groups'),
+                                              key='-part_group-')]])],
              [Psgui.Column([[Psgui.B('OK'), Psgui.B('Cancel')]],
                            expand_x=True, element_justification='right')]]
         )
@@ -158,27 +169,70 @@ class Engine:
             self.database.subsystem_input(self.db_subsystem_input)
             self.db_subsystem_input = []
 
-            self.bicycle_base_list.update(values=self.database.get_subsystem_list("Bicycle base"))
-            self.drive_system_list.update(values=self.database.get_subsystem_list("Drive system"))
-            self.brake_system_list.update(values=self.database.get_subsystem_list("Brake system"))
-            self.wheels_list.update(values=self.database.get_subsystem_list("Wheels"))
+    def subsystem_windows_refresh(self):
 
-            self.front_wheel_option.update(values=self.database.get_subsystem_list("Wheels"))
-            self.bicycle_base_option.update(values=self.database.get_subsystem_list("Bicycle base"))
-            self.rear_wheel_option.update(values=self.database.get_subsystem_list("Wheels"))
-            self.drive_system_option.update(values=self.database.get_subsystem_list("Drive system"))
-            self.brake_system_option.update(values=self.database.get_subsystem_list("Brake system"))
+        self.bicycle_base_list.update(values=self.database.get_subsystem_list("Bicycle base"))
+        self.drive_system_list.update(values=self.database.get_subsystem_list("Drive system"))
+        self.brake_system_list.update(values=self.database.get_subsystem_list("Brake system"))
+        self.wheels_list.update(values=self.database.get_subsystem_list("Wheels"))
+
+    def optlists_refresh(self):
+
+        self.front_wheel_option.update(values=self.database.get_subsystem_list("Wheels"))
+        self.bicycle_base_option.update(values=self.database.get_subsystem_list("Bicycle base"))
+        self.rear_wheel_option.update(values=self.database.get_subsystem_list("Wheels"))
+        self.drive_system_option.update(values=self.database.get_subsystem_list("Drive system"))
+        self.brake_system_option.update(values=self.database.get_subsystem_list("Brake system"))
 
     def mainloop(self):
 
         while True:
-            event, values = self.window.read()
-            if event == Psgui.WIN_CLOSED or event == 'Exit':
+            self.event, self.values = self.window.read()
+            print(self.event, self.values)
+            if self.event == Psgui.WIN_CLOSED or self.event == 'Exit':
                 break
-            if event == "Add a part":
+            if self.event == "Add a part":
                 self.add_parts_window()
+                self.subsystem_parts_list.update(
+                    self.database.get_table_names_list(
+                        "parts",
+                        'part_group',
+                        f"'{self.values['-subsystem_choose-'][0]}'"))
 
-            if event == "Add subsystem":
+            if self.event == "Add subsystem":
                 self.add_subsystem_window()
+                self.subsystem_windows_refresh()
+                self.optlists_refresh()
+
+            if self.event == '-bicycle_base-':
+                self.subsystem_list.update(self.database.get_table_names_list(
+                    "part_groups", "subsystem_group", "'Bicycle base'"))
+                self.selected_subsystem.update(self.values[self.event][0])
+                self.subsystem_windows_refresh()
+
+            if self.event == '-drive_system-':
+                self.subsystem_list.update(self.database.get_table_names_list(
+                    "part_groups", "subsystem_group", "'Drive system'"))
+                self.selected_subsystem.update(self.values[self.event][0])
+                self.subsystem_windows_refresh()
+
+            if self.event == '-brake_system-':
+                self.subsystem_list.update(self.database.get_table_names_list(
+                    "part_groups", "subsystem_group", "'Brake system'"))
+                self.selected_subsystem.update(self.values[self.event][0])
+                self.subsystem_windows_refresh()
+
+            if self.event == '-wheels-':
+                self.subsystem_list.update(self.database.get_table_names_list(
+                    "part_groups", "subsystem_group", "'Wheels'"))
+                self.selected_subsystem.update(self.values[self.event][0])
+                self.subsystem_windows_refresh()
+
+            if self.event == '-subsystem_choose-':
+                self.subsystem_parts_list.update(
+                    self.database.get_table_names_list(
+                        "parts",
+                        'part_group',
+                        f"'{self.values[self.event][0]}'"))
 
         self.window.close()
