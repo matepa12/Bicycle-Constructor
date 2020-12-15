@@ -16,14 +16,14 @@ class DBCreation:
                             "name TEXT NOT NULL",
                             "subsystem_group TEXT NOT NULL"),
             "parts": ("_id INTEGER PRIMARY KEY AUTOINCREMENT",
-                      "name TEXT NOT NULL",
+                      "name TEXT NOT NULL UNIQUE",
                       "company TEXT",
                       "value FLOAT NOT NULL",
                       "part_group TEXT NOT NULL"),
             "custom_subsystems": ("_id INTEGER PRIMARY KEY AUTOINCREMENT",
-                                  "name TEXT NOT NULL",
+                                  "name TEXT NOT NULL UNIQUE",
                                   "subsystem_group TEXT NOT NULL",
-                                  "chosen_parts TEXT")
+                                  "chosen_parts TEXT DEFAULT empty")
         }
         for key in base_tables:
             self.db.execute(f"CREATE TABLE IF NOT EXISTS {key} "
@@ -111,9 +111,35 @@ class DBCreation:
                 table_name_list.append(row[0])
         else:
             for row in self.db.execute(f"SELECT name FROM {table_name} "
-                                       f"WHERE {column_filter} = {column_filter_value}").fetchall():
+                                       f"WHERE {column_filter} = ?", (column_filter_value,)).fetchall():
                 table_name_list.append(row[0])
         return table_name_list
+
+    def read_custom_subsystem_parts(self, subsystem_name: str) -> set:
+        if subsystem_name == 'Please add subsystem':
+            return set()
+        parts_cursor = self.db.execute(f"SELECT chosen_parts FROM custom_subsystems WHERE name = ?",
+                                       (subsystem_name,)).fetchone()
+        if parts_cursor[0] == "empty":
+            return set()
+        else:
+            chosen_parts = set(map(int, parts_cursor[0].split(".")))
+            return chosen_parts
+
+    def write_custom_subsystem_parts(self, updated_parts: set, subsystem_name: str):
+        to_be_updated = ".".join(set(map(str, updated_parts)))
+        self.db.execute("UPDATE custom_subsystems SET chosen_parts = ? WHERE name = ?",
+                        (to_be_updated, subsystem_name))
+        self.db.commit()
+
+    def get_part_id(self, part_name: str):
+        cursor = self.db.execute("SELECT _id FROM parts WHERE name = ?", (part_name,))
+        part_id = cursor.fetchone()
+        return part_id[0]
+
+    def get_part_attribute_from_id(self, attribute: str, part_id: int):
+        cursor = self.db.execute(f"SELECT {attribute} FROM parts WHERE _id = ?", (part_id,))
+        return cursor.fetchone()[0]
 
     def close(self):
         self.db.close()
