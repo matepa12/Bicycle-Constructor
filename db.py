@@ -116,7 +116,7 @@ class DBCreation:
         return table_name_list
 
     def read_custom_subsystem_parts(self, subsystem_name: str) -> set:
-        if subsystem_name == 'Please add subsystem':
+        if subsystem_name == 'Please add subsystem' or subsystem_name == '':
             return set()
         parts_cursor = self.db.execute(f"SELECT chosen_parts FROM custom_subsystems WHERE name = ?",
                                        (subsystem_name,)).fetchone()

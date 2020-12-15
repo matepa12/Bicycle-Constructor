@@ -44,14 +44,26 @@ class Engine:
         # Column 2 ==========
 
         bicycle_image = Psgui.Image(filename='bicycle-311808_1280.png', pad=(2, 2))
-        self.bicycle_base_option = Psgui.OptionMenu(self.database.get_subsystem_list("Bicycle base"), size=(20,))
-        self.drive_system_option = Psgui.OptionMenu(self.database.get_subsystem_list("Drive system"), size=(20,))
-        self.brake_system_option = Psgui.OptionMenu(self.database.get_subsystem_list("Brake system"), size=(20,))
-        self.front_wheel_option = Psgui.OptionMenu(self.database.get_subsystem_list("Wheels"), size=(20,))
-        self.rear_wheel_option = Psgui.OptionMenu(self.database.get_subsystem_list("Wheels"), size=(20,))
-        final_price = Psgui.Frame(
+        self.bicycle_base_option = Psgui.Combo(self.database.get_subsystem_list("Bicycle base"),
+                                               size=(20, 5), readonly=True, key='-chosen_bicycle_base-',
+                                               enable_events=True)
+        self.drive_system_option = Psgui.Combo(self.database.get_subsystem_list("Drive system"),
+                                               size=(20, 5), readonly=True, key='-chosen_drive_system-',
+                                               enable_events=True)
+        self.brake_system_option = Psgui.Combo(self.database.get_subsystem_list("Brake system"),
+                                               size=(20, 5), readonly=True, key='-chosen_brake_system-',
+                                               enable_events=True)
+        self.front_wheel_option = Psgui.Combo(self.database.get_subsystem_list("Wheels"),
+                                              size=(20, 5), readonly=True, key='-chosen_front_wheel-',
+                                              enable_events=True)
+        self.rear_wheel_option = Psgui.Combo(self.database.get_subsystem_list("Wheels"),
+                                             size=(20, 5), readonly=True, key='-chosen_rear_wheel-',
+                                             enable_events=True)
+        self.final_price_text = Psgui.Text("0.0",
+                                           pad=(5, 5), size=(10, 1), font=('Calibri', 15))
+        self.final_price = Psgui.Frame(
             title='Bicycle cost',
-            layout=[[Psgui.Text("value", pad=(5, 5), font=('Calibri', 15))]],
+            layout=[[self.final_price_text]],
             element_justification='center'
         )
 
@@ -62,7 +74,7 @@ class Engine:
                 [self.drive_system_option, self.brake_system_option]
             ],
                 element_justification='center')],
-            [Psgui.Column(layout=[[final_price]],
+            [Psgui.Column(layout=[[self.final_price]],
                           element_justification='right',
                           expand_x=True)]
         ]
@@ -70,7 +82,7 @@ class Engine:
         column2 = Psgui.Column(layout=column2_layout, pad=(10, 10))
 
         # Column 3 ==========
-        self.selected_subsystem = Psgui.Text([], font=('Calibri', 10), size=(16, 1))
+        self.selected_subsystem = Psgui.Text("", font=('Calibri', 10), size=(16, 1))
         self.selected_subsystem_parts = Psgui.Multiline(size=(16, 7))
         subsystem_name = Psgui.Frame('Selected subsystem', [[self.selected_subsystem],
                                                             [self.selected_subsystem_parts]])
@@ -116,13 +128,12 @@ class Engine:
             'Add a part',
             [[Psgui.Column([[Psgui.Text('Enter the name of the part:')],
                             [Psgui.Text('Choose the manufacturer or add a new one:')],
-                            # [Psgui.Text('')],
                             [Psgui.Text('Enter the value of the part:')],
                             [Psgui.Text('Choose the part group:')],
                             ], element_justification='right'),
               Psgui.Column([[Psgui.In(key='-part_name-')],
-                            # [Psgui.OptionMenu(test_values, key='-company_name-')],
-                            [Psgui.In(key='-company_name_new-')],
+                            [Psgui.Combo(self.database.get_table_names_list("companies"),
+                                         key='-company_name-', size=(43, 10))],
                             [Psgui.In(key='-part_value-')],
                             [Psgui.OptionMenu(self.database.get_table_names_list('part_groups'),
                                               key='-part_group-')]])],
@@ -139,6 +150,8 @@ class Engine:
                     parts_window.close()
                     Psgui.popup('Part name must be unique.')
                     break
+                # if key == '-company_name-':
+                #
                 if key == '-part_value-':
                     try:
                         self.db_part_input.append(float(values[key]))
@@ -289,7 +302,23 @@ class Engine:
                     parts_set -= to_be_removed
                     parts_set.add(to_be_added)
                     self.database.write_custom_subsystem_parts(parts_set, subsystem_name)
+                    self.selected_subsystem_parts.update(
+                        "\n".join([self.database.get_part_attribute_from_id("name", value) for value
+                                   in self.database.read_custom_subsystem_parts(subsystem_name)]))
                 except IndexError:
                     pass
+
+            list_of_sets = [self.database.read_custom_subsystem_parts(self.values[subsystems])
+                            for subsystems in ('-chosen_bicycle_base-',
+                                               '-chosen_drive_system-',
+                                               '-chosen_brake_system-',
+                                               '-chosen_front_wheel-',
+                                               '-chosen_rear_wheel-')]
+            sum_value = 0.0
+            for set_i in list_of_sets:
+                for i in set_i:
+                    sum_value += self.database.get_part_attribute_from_id('value', i)
+            print(sum_value)
+            self.final_price_text.update(sum_value)
 
         self.window.close()
