@@ -16,18 +16,19 @@ class Engine:
 
         self.bicycle_base_list = Psgui.Listbox(
             self.database.get_subsystem_list("Bicycle base"),
-            size=(20, 6), pad=(2, (0, 0)), enable_events=True, key='-bicycle_base-')
+            size=(20, 5), pad=(2, (0, 0)), enable_events=True, key='-bicycle_base-')
         self.drive_system_list = Psgui.Listbox(
             self.database.get_subsystem_list("Drive system"),
-            size=(20, 6), pad=(2, (0, 0)), enable_events=True, key='-drive_system-')
+            size=(20, 5), pad=(2, (0, 0)), enable_events=True, key='-drive_system-')
         self.brake_system_list = Psgui.Listbox(
             self.database.get_subsystem_list("Brake system"),
-            size=(20, 6), pad=(2, (0, 0)), enable_events=True, key='-brake_system-')
+            size=(20, 5), pad=(2, (0, 0)), enable_events=True, key='-brake_system-')
         self.wheels_list = Psgui.Listbox(
             self.database.get_subsystem_list("Wheels"),
-            size=(20, 6), pad=(2, (0, 0)), enable_events=True, key='-wheels-')
-        add_subsystem_button = Psgui.Button("Add subsystem", pad=(2, 10))
-
+            size=(20, 5), pad=(2, (0, 0)), enable_events=True, key='-wheels-')
+        add_subsystem_button = Psgui.Button("Add subsystem", pad=(2, 10), key='-add_subsystem-')
+        remove_subsystem_button = Psgui.Button("Remove selected\n subsystem", pad=(2, 0),
+                                               size=(13, 2), enable_events=True, key='-remove_subsystem-')
         column1_layout = [
             [Psgui.Text("Bicycle base:", pad=(2, (10, 0)))],
             [self.bicycle_base_list],
@@ -37,7 +38,8 @@ class Engine:
             [self.brake_system_list],
             [Psgui.Text("Wheels: ", pad=(2, (10, 0)))],
             [self.wheels_list],
-            [add_subsystem_button]
+            [add_subsystem_button],
+            [remove_subsystem_button]
         ]
         column1 = Psgui.Column(layout=column1_layout, pad=(10, 10))
 
@@ -94,10 +96,11 @@ class Engine:
         self.subsystem_parts_list = Psgui.Listbox([],
                                                   enable_events=True,
                                                   key="-part_choose-",
-                                                  size=(20, 14),
+                                                  size=(20, 10),
                                                   pad=(2, (0, 0)))
-        add_parts_button = Psgui.Button("Add a part", pad=(2, 10), enable_events=True)
-
+        add_parts_button = Psgui.Button("Add a part", pad=(2, 10), size=(13, 1))
+        remove_part_button = Psgui.Button("Remove selected\n part", pad=(2, 0), size=(13, 2),
+                                          enable_events=True, key='-remove_part-')
         column3_layout = [
             [subsystem_name],
             [Psgui.Text("Subsystem:", pad=(2, (10, 0)))],
@@ -105,6 +108,7 @@ class Engine:
             [Psgui.Text("Parts:", pad=(2, (10, 0)))],
             [self.subsystem_parts_list],
             [add_parts_button],
+            [remove_part_button]
         ]
         column3 = Psgui.Column(layout=column3_layout, pad=(10, 10))
 
@@ -121,6 +125,7 @@ class Engine:
         self.window = Psgui.Window('Bicycle Composer', layout=window_layout)
         self.db_part_input = []
         self.db_subsystem_input = []
+        self.db_companies_input = []
 
     def add_parts_window(self):
 
@@ -150,8 +155,11 @@ class Engine:
                     parts_window.close()
                     Psgui.popup('Part name must be unique.')
                     break
-                # if key == '-company_name-':
-                #
+                if key == '-company_name-' and values[key] not in self.database.get_table_names_list("companies"):
+                    self.db_companies_input = (values[key],)
+                else:
+                    pass
+
                 if key == '-part_value-':
                     try:
                         self.db_part_input.append(float(values[key]))
@@ -167,6 +175,10 @@ class Engine:
                 self.db_part_input = tuple(self.db_part_input)
                 self.database.part_input(self.db_part_input)
                 self.db_part_input = []
+
+            if self.db_companies_input:
+                self.database.company_input(self.db_companies_input)
+                self.db_companies_input = []
 
     def add_subsystem_window(self):
 
@@ -234,12 +246,36 @@ class Engine:
                 except IndexError:
                     pass
 
-            if self.event == "Add subsystem":
+            if self.event == '-add_subsystem-':
                 self.add_subsystem_window()
                 self.subsystem_windows_refresh()
                 self.optlists_refresh()
 
-            if self.event == '-bicycle_base-':
+            if self.event == '-remove_subsystem-':
+                to_be_removed_key = ""
+                keys_list = ['-bicycle_base-', '-drive_system-', '-brake_system-', '-wheels-']
+                for key in keys_list:
+                    if self.values[key]:
+                        to_be_removed_key = key
+
+                opt_keys_list = ['-chosen_bicycle_base-',
+                                 '-chosen_drive_system-',
+                                 '-chosen_brake_system-',
+                                 '-chosen_front_wheel-',
+                                 '-chosen_rear_wheel-']
+                for opt_key in opt_keys_list:
+                    if self.values[opt_key] == self.values[to_be_removed_key][0]:
+                        self.values[opt_key] = ""
+
+                if not to_be_removed_key or self.values[to_be_removed_key][0] == 'Please add subsystem':
+                    Psgui.popup('Choose the subsystem to remove')
+
+                if to_be_removed_key and self.values[to_be_removed_key][0] != 'Please add subsystem':
+                    self.database.remove_record("custom_subsystems", self.values[to_be_removed_key][0])
+                    self.subsystem_windows_refresh()
+                    self.optlists_refresh()
+
+            if self.event == '-bicycle_base-' and self.values[self.event][0] != "Please add subsystem":
                 self.subsystem_list.update(self.database.get_table_names_list(
                     "part_groups", "subsystem_group", "Bicycle base"))
                 self.selected_subsystem.update(self.values[self.event][0])
@@ -248,7 +284,7 @@ class Engine:
                                in self.database.read_custom_subsystem_parts(self.values[self.event][0])]))
                 self.subsystem_windows_refresh(exclude_window=self.bicycle_base_list)
 
-            if self.event == '-drive_system-':
+            if self.event == '-drive_system-' and self.values[self.event][0] != "Please add subsystem":
                 self.subsystem_list.update(self.database.get_table_names_list(
                     "part_groups", "subsystem_group", "Drive system"))
                 self.selected_subsystem.update(self.values[self.event][0])
@@ -257,7 +293,7 @@ class Engine:
                                in self.database.read_custom_subsystem_parts(self.values[self.event][0])]))
                 self.subsystem_windows_refresh(exclude_window=self.drive_system_list)
 
-            if self.event == '-brake_system-':
+            if self.event == '-brake_system-' and self.values[self.event][0] != "Please add subsystem":
                 self.subsystem_list.update(self.database.get_table_names_list(
                     "part_groups", "subsystem_group", "Brake system"))
                 self.selected_subsystem.update(self.values[self.event][0])
@@ -266,7 +302,7 @@ class Engine:
                                in self.database.read_custom_subsystem_parts(self.values[self.event][0])]))
                 self.subsystem_windows_refresh(exclude_window=self.brake_system_list)
 
-            if self.event == '-wheels-':
+            if self.event == '-wheels-' and self.values[self.event][0] != "Please add subsystem":
                 self.subsystem_list.update(self.database.get_table_names_list(
                     "part_groups", "subsystem_group", "Wheels"))
                 self.selected_subsystem.update(self.values[self.event][0])
@@ -318,7 +354,6 @@ class Engine:
             for set_i in list_of_sets:
                 for i in set_i:
                     sum_value += self.database.get_part_attribute_from_id('value', i)
-            print(sum_value)
             self.final_price_text.update(sum_value)
 
         self.window.close()

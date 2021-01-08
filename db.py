@@ -101,6 +101,10 @@ class DBCreation:
         self.db.execute("INSERT INTO parts (name, company, value, part_group) VALUES (?, ?, ?, ?)", values)
         self.db.commit()
 
+    def company_input(self, values: tuple):
+        self.db.execute("INSERT INTO companies (name) VALUES (?)", values)
+        self.db.commit()
+
     def get_table_names_list(self,
                              table_name: str,
                              column_filter: str = None,
@@ -120,6 +124,9 @@ class DBCreation:
             return set()
         parts_cursor = self.db.execute(f"SELECT chosen_parts FROM custom_subsystems WHERE name = ?",
                                        (subsystem_name,)).fetchone()
+        if not parts_cursor:
+            return set()
+
         if parts_cursor[0] == "empty":
             return set()
         else:
@@ -134,12 +141,15 @@ class DBCreation:
 
     def get_part_id(self, part_name: str):
         cursor = self.db.execute("SELECT _id FROM parts WHERE name = ?", (part_name,))
-        part_id = cursor.fetchone()
-        return part_id[0]
+        return cursor.fetchone()[0]
 
     def get_part_attribute_from_id(self, attribute: str, part_id: int):
         cursor = self.db.execute(f"SELECT {attribute} FROM parts WHERE _id = ?", (part_id,))
         return cursor.fetchone()[0]
+
+    def remove_record(self, table: str, name: str):
+        self.db.execute(f"DELETE FROM {table} WHERE name = ?", (name,))
+        self.db.commit()
 
     def close(self):
         self.db.close()
