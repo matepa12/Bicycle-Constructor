@@ -274,6 +274,8 @@ class Engine:
                     self.database.remove_record("custom_subsystems", self.values[to_be_removed_key][0])
                     self.subsystem_windows_refresh()
                     self.optlists_refresh()
+                    self.selected_subsystem.update(value="")
+                    self.selected_subsystem_parts.update(value="")
 
             if self.event == '-bicycle_base-' and self.values[self.event][0] != "Please add subsystem":
                 self.subsystem_list.update(self.database.get_table_names_list(
@@ -343,6 +345,35 @@ class Engine:
                                    in self.database.read_custom_subsystem_parts(subsystem_name)]))
                 except IndexError:
                     pass
+
+            if self.event == '-remove_part-':
+                if self.values['-part_choose-']:
+                    to_be_removed = set()
+                    to_be_removed.add(self.database.get_part_id(self.values['-part_choose-'][0]))
+
+                    for record in self.database.read_custom_subsystem_column():
+                        name = record[0]
+                        parts = record[1]
+                        parts -= to_be_removed
+                        self.database.write_custom_subsystem_parts(parts, name)
+
+                    self.database.remove_record('parts', self.values['-part_choose-'][0])
+
+                    keys_list = ['-bicycle_base-', '-drive_system-', '-brake_system-', '-wheels-']
+                    right_key = ''
+                    for key in keys_list:
+                        if self.values[key]:
+                            right_key = key
+
+                    if right_key:
+                        self.selected_subsystem_parts.update(
+                            "\n".join([self.database.get_part_attribute_from_id("name", value) for value
+                                       in self.database.read_custom_subsystem_parts(self.values[right_key][0])]))
+                        self.subsystem_parts_list.update(
+                            self.database.get_table_names_list(
+                                "parts",
+                                'part_group',
+                                self.values[right_key][0]))
 
             list_of_sets = [self.database.read_custom_subsystem_parts(self.values[subsystems])
                             for subsystems in ('-chosen_bicycle_base-',

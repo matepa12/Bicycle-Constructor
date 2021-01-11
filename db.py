@@ -127,11 +127,21 @@ class DBCreation:
         if not parts_cursor:
             return set()
 
-        if parts_cursor[0] == "empty":
+        if parts_cursor[0] == "empty" or not parts_cursor[0]:
             return set()
         else:
             chosen_parts = set(map(int, parts_cursor[0].split(".")))
             return chosen_parts
+
+    def read_custom_subsystem_column(self):
+        parts_cursor = self.db.execute(f"SELECT name, chosen_parts FROM custom_subsystems").fetchall()
+        row_list = []
+        for row in parts_cursor:
+            if row[1]:
+                name = row[0]
+                chosen_parts = set(map(int, row[1].split(".")))
+                row_list.append((name, chosen_parts))
+        return row_list
 
     def write_custom_subsystem_parts(self, updated_parts: set, subsystem_name: str):
         to_be_updated = ".".join(set(map(str, updated_parts)))
