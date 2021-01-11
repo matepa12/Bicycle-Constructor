@@ -1,7 +1,5 @@
 import PySimpleGUI as Psgui
 
-test_values = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
-
 
 # noinspection PyTypeChecker
 class Engine:
@@ -11,6 +9,8 @@ class Engine:
         self.database = database
         self.event = None
         self.values = None
+
+        Psgui.theme('Brown Blue')
 
         # Column 1 ==========
 
@@ -84,6 +84,7 @@ class Engine:
         column2 = Psgui.Column(layout=column2_layout, pad=(10, 10))
 
         # Column 3 ==========
+
         self.selected_subsystem = Psgui.Text("", font=('Calibri', 10), size=(16, 1))
         self.selected_subsystem_parts = Psgui.Multiline(size=(16, 7))
         subsystem_name = Psgui.Frame('Selected subsystem', [[self.selected_subsystem],
@@ -232,7 +233,6 @@ class Engine:
 
         while True:
             self.event, self.values = self.window.read()
-            print(self.event, self.values)
             if self.event == Psgui.WIN_CLOSED or self.event == 'Exit':
                 break
             if self.event == "Add a part":
