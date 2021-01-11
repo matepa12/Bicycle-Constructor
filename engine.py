@@ -12,6 +12,9 @@ class Engine:
 
         Psgui.theme('Brown Blue')
 
+        menu_def = [['File', ['Open', 'Load', 'Save', 'Exit']]]  # TODO just do it
+        menu = Psgui.Menu(menu_def, key='-file-')
+
         # Column 1 ==========
 
         self.bicycle_base_list = Psgui.Listbox(
@@ -114,6 +117,7 @@ class Engine:
         column3 = Psgui.Column(layout=column3_layout, pad=(10, 10))
 
         window_layout = [
+            [menu],
             [Psgui.Column([
                 [Psgui.Text("Here you can compose your bicycle:", font=('Calibri', 22))]
             ],
@@ -233,6 +237,7 @@ class Engine:
 
         while True:
             self.event, self.values = self.window.read()
+            print(self.event, self.values)  # TODO remove
             if self.event == Psgui.WIN_CLOSED or self.event == 'Exit':
                 break
             if self.event == "Add a part":
@@ -263,12 +268,15 @@ class Engine:
                                  '-chosen_brake_system-',
                                  '-chosen_front_wheel-',
                                  '-chosen_rear_wheel-']
-                for opt_key in opt_keys_list:
-                    if self.values[opt_key] == self.values[to_be_removed_key][0]:
-                        self.values[opt_key] = ""
+                try:
+                    for opt_key in opt_keys_list:
+                        if self.values[opt_key] == self.values[to_be_removed_key][0]:
+                            self.values[opt_key] = ""
+                except KeyError:
+                    pass
 
                 if not to_be_removed_key or self.values[to_be_removed_key][0] == 'Please add subsystem':
-                    Psgui.popup('Choose the subsystem to remove')
+                    Psgui.popup('Choose a subsystem to remove')
 
                 if to_be_removed_key and self.values[to_be_removed_key][0] != 'Please add subsystem':
                     self.database.remove_record("custom_subsystems", self.values[to_be_removed_key][0])
@@ -374,6 +382,8 @@ class Engine:
                                 "parts",
                                 'part_group',
                                 self.values[right_key][0]))
+                else:
+                    Psgui.popup('Choose a part to remove')
 
             list_of_sets = [self.database.read_custom_subsystem_parts(self.values[subsystems])
                             for subsystems in ('-chosen_bicycle_base-',
