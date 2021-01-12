@@ -12,9 +12,6 @@ class Engine:
 
         Psgui.theme('Brown Blue')
 
-        menu_def = [['File', ['Open', 'Load', 'Save', 'Exit']]]  # TODO just do it
-        menu = Psgui.Menu(menu_def, key='-file-')
-
         # Column 1 ==========
 
         self.bicycle_base_list = Psgui.Listbox(
@@ -117,7 +114,6 @@ class Engine:
         column3 = Psgui.Column(layout=column3_layout, pad=(10, 10))
 
         window_layout = [
-            [menu],
             [Psgui.Column([
                 [Psgui.Text("Here you can compose your bicycle:", font=('Calibri', 22))]
             ],
@@ -237,7 +233,6 @@ class Engine:
 
         while True:
             self.event, self.values = self.window.read()
-            print(self.event, self.values)  # TODO remove
             if self.event == Psgui.WIN_CLOSED or self.event == 'Exit':
                 break
             if self.event == "Add a part":
