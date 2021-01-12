@@ -65,7 +65,7 @@ class DBCreation:
                       "Wheels": ("Front hub",
                                  "Rear hub",
                                  "Rim",
-                                 "tube",
+                                 "Tube",
                                  "Tyre",
                                  "Other",
                                  )
@@ -119,6 +119,12 @@ class DBCreation:
                 table_name_list.append(row[0])
         return table_name_list
 
+    def get_parts_name_and_value_list(self):
+        part_list = []
+        for row in self.db.execute(f"SELECT name, value FROM parts").fetchall():
+            part_list.append(row[0])
+        return part_list
+
     def read_custom_subsystem_parts(self, subsystem_name: str) -> set:
         if subsystem_name == 'Please add subsystem' or subsystem_name == '':
             return set()
@@ -156,6 +162,11 @@ class DBCreation:
     def get_part_attribute_from_id(self, attribute: str, part_id: int):
         cursor = self.db.execute(f"SELECT {attribute} FROM parts WHERE _id = ?", (part_id,))
         return cursor.fetchone()[0]
+
+    def get_part_name_and_value_from_id(self, part_id: int):
+        cursor = self.db.execute(f"SELECT name, value FROM parts WHERE _id = ?", (part_id,))
+        ret = cursor.fetchone()
+        return f"{ret[0]}: {ret[1]}"
 
     def remove_record(self, table: str, name: str):
         self.db.execute(f"DELETE FROM {table} WHERE name = ?", (name,))

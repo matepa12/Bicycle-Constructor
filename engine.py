@@ -232,7 +232,27 @@ class Engine:
     def mainloop(self):
 
         while True:
+            keys_list = ['-bicycle_base-', '-drive_system-', '-brake_system-', '-wheels-']
+            opt_keys_list = ['-chosen_bicycle_base-',
+                             '-chosen_drive_system-',
+                             '-chosen_brake_system-',
+                             '-chosen_front_wheel-',
+                             '-chosen_rear_wheel-']
             self.event, self.values = self.window.read()
+
+            for key in keys_list:
+                try:
+                    if self.values[key][0] == "Please add subsystem":
+                        self.subsystem_windows_refresh()
+                        self.selected_subsystem.update(value="")
+                        self.selected_subsystem_parts.update(value="")
+                        self.subsystem_list.update(values=[])
+                        self.subsystem_parts_list.update(values=[])
+                except IndexError:
+                    pass
+                finally:
+                    continue
+
             if self.event == Psgui.WIN_CLOSED or self.event == 'Exit':
                 break
             if self.event == "Add a part":
@@ -253,16 +273,10 @@ class Engine:
 
             if self.event == '-remove_subsystem-':
                 to_be_removed_key = ""
-                keys_list = ['-bicycle_base-', '-drive_system-', '-brake_system-', '-wheels-']
                 for key in keys_list:
                     if self.values[key]:
                         to_be_removed_key = key
 
-                opt_keys_list = ['-chosen_bicycle_base-',
-                                 '-chosen_drive_system-',
-                                 '-chosen_brake_system-',
-                                 '-chosen_front_wheel-',
-                                 '-chosen_rear_wheel-']
                 try:
                     for opt_key in opt_keys_list:
                         if self.values[opt_key] == self.values[to_be_removed_key][0]:
@@ -270,7 +284,7 @@ class Engine:
                 except KeyError:
                     pass
 
-                if not to_be_removed_key or self.values[to_be_removed_key][0] == 'Please add subsystem':
+                if not to_be_removed_key:
                     Psgui.popup('Choose a subsystem to remove')
 
                 if to_be_removed_key and self.values[to_be_removed_key][0] != 'Please add subsystem':
@@ -285,36 +299,40 @@ class Engine:
                     "part_groups", "subsystem_group", "Bicycle base"))
                 self.selected_subsystem.update(self.values[self.event][0])
                 self.selected_subsystem_parts.update(
-                    "\n".join([self.database.get_part_attribute_from_id("name", value) for value
+                    "\n".join([self.database.get_part_name_and_value_from_id(value) for value
                                in self.database.read_custom_subsystem_parts(self.values[self.event][0])]))
                 self.subsystem_windows_refresh(exclude_window=self.bicycle_base_list)
+                self.subsystem_parts_list.update(values="")
 
             if self.event == '-drive_system-' and self.values[self.event][0] != "Please add subsystem":
                 self.subsystem_list.update(self.database.get_table_names_list(
                     "part_groups", "subsystem_group", "Drive system"))
                 self.selected_subsystem.update(self.values[self.event][0])
                 self.selected_subsystem_parts.update(
-                    "\n".join([self.database.get_part_attribute_from_id("name", value) for value
+                    "\n".join([self.database.get_part_name_and_value_from_id(value) for value
                                in self.database.read_custom_subsystem_parts(self.values[self.event][0])]))
                 self.subsystem_windows_refresh(exclude_window=self.drive_system_list)
+                self.subsystem_parts_list.update(values="")
 
             if self.event == '-brake_system-' and self.values[self.event][0] != "Please add subsystem":
                 self.subsystem_list.update(self.database.get_table_names_list(
                     "part_groups", "subsystem_group", "Brake system"))
                 self.selected_subsystem.update(self.values[self.event][0])
                 self.selected_subsystem_parts.update(
-                    "\n".join([self.database.get_part_attribute_from_id("name", value) for value
+                    "\n".join([self.database.get_part_name_and_value_from_id(value) for value
                                in self.database.read_custom_subsystem_parts(self.values[self.event][0])]))
                 self.subsystem_windows_refresh(exclude_window=self.brake_system_list)
+                self.subsystem_parts_list.update(values="")
 
             if self.event == '-wheels-' and self.values[self.event][0] != "Please add subsystem":
                 self.subsystem_list.update(self.database.get_table_names_list(
                     "part_groups", "subsystem_group", "Wheels"))
                 self.selected_subsystem.update(self.values[self.event][0])
                 self.selected_subsystem_parts.update(
-                    "\n".join([self.database.get_part_attribute_from_id("name", value) for value
+                    "\n".join([self.database.get_part_name_and_value_from_id(value) for value
                                in self.database.read_custom_subsystem_parts(self.values[self.event][0])]))
                 self.subsystem_windows_refresh(exclude_window=self.wheels_list)
+                self.subsystem_parts_list.update(values="")
 
             if self.event == '-subsystem_choose-':
                 try:
@@ -330,7 +348,7 @@ class Engine:
                 parts_set = set()
                 subsystem_name = ""
                 for key, value in self.values.items():
-                    if (str(key) in ('-bicycle_base-', '-drive_system-', '-brake_system-', '-wheels-')) and value != []:
+                    if (str(key) in keys_list) and value != []:
                         subsystem_name = value[0]
                         parts_set = self.database.read_custom_subsystem_parts(value[0])
                 try:
@@ -344,7 +362,7 @@ class Engine:
                     parts_set.add(to_be_added)
                     self.database.write_custom_subsystem_parts(parts_set, subsystem_name)
                     self.selected_subsystem_parts.update(
-                        "\n".join([self.database.get_part_attribute_from_id("name", value) for value
+                        "\n".join([self.database.get_part_name_and_value_from_id(value) for value
                                    in self.database.read_custom_subsystem_parts(subsystem_name)]))
                 except IndexError:
                     pass
@@ -362,7 +380,6 @@ class Engine:
 
                     self.database.remove_record('parts', self.values['-part_choose-'][0])
 
-                    keys_list = ['-bicycle_base-', '-drive_system-', '-brake_system-', '-wheels-']
                     right_key = ''
                     for key in keys_list:
                         if self.values[key]:
@@ -370,7 +387,7 @@ class Engine:
 
                     if right_key:
                         self.selected_subsystem_parts.update(
-                            "\n".join([self.database.get_part_attribute_from_id("name", value) for value
+                            "\n".join([self.database.get_part_name_and_value_from_id(value) for value
                                        in self.database.read_custom_subsystem_parts(self.values[right_key][0])]))
                         self.subsystem_parts_list.update(
                             self.database.get_table_names_list(
@@ -381,11 +398,7 @@ class Engine:
                     Psgui.popup('Choose a part to remove')
 
             list_of_sets = [self.database.read_custom_subsystem_parts(self.values[subsystems])
-                            for subsystems in ('-chosen_bicycle_base-',
-                                               '-chosen_drive_system-',
-                                               '-chosen_brake_system-',
-                                               '-chosen_front_wheel-',
-                                               '-chosen_rear_wheel-')]
+                            for subsystems in opt_keys_list]
             sum_value = 0.0
             for set_i in list_of_sets:
                 for i in set_i:
