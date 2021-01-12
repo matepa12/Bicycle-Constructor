@@ -393,7 +393,7 @@ class Engine:
                             self.database.get_table_names_list(
                                 "parts",
                                 'part_group',
-                                self.values[right_key][0]))
+                                self.values['-subsystem_choose-'][0]))
                 else:
                     Psgui.popup('Choose a part to remove')
 
